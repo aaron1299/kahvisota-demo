@@ -1,16 +1,16 @@
 <!DOCTYPE html>
-<html lang="fi">
+<html lang="en">
 <head>
 	<meta charset="utf-8">
 	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
 	<meta name="robots" content="noindex, nofollow, noarchive">
-	<meta name="copyright" content="© 2026 Aaron Härkönen. Kaikki oikeudet pidätetään.">
+	<meta name="copyright" content="© 2026 Aaron Härkönen. All rights reserved.">
 	<title>Kahvisota</title>
 	<!--
-		Kahvisota. © 2026 Aaron Härkönen. Kaikki oikeudet pidätetään.
-		Tämä on esittelyversio. Pelin lähdekoodia, grafiikkaa, ääniä eikä
-		pelimekaniikan toteutusta saa kopioida, purkaa tai käyttää uudelleen
-		ilman kirjallista lupaa. Ottelupalvelin ei sisälly tähän pakettiin.
+		Kahvisota. © 2026 Aaron Härkönen. All rights reserved.
+		This is a demonstration build. No part of the code, graphics, audio or
+		game logic may be copied, extracted, decompiled or reused without
+		written permission. The match server is not included in this package.
 	-->
 	<style>
 		html, body {
@@ -68,20 +68,20 @@
 
 </head>
 <body>
-	<canvas id="canvas" tabindex="0">Selaimesi ei tue canvas-elementtia.</canvas>
+	<canvas id="canvas" tabindex="0">Your browser does not support the canvas element.</canvas>
 
 	<div id="lataus">
 		<div id="nimi">KAHVISOTA</div>
-		<div id="alaotsikko">ladataan areenaa</div>
+		<div id="alaotsikko">loading the arena</div>
 		<div id="palkki"><div id="palkki-taytto"></div></div>
 		<div id="virhe"></div>
 	</div>
 
-	<noscript>Peli vaatii JavaScriptin.</noscript>
+	<noscript>This game requires JavaScript.</noscript>
 
 	<script src="index.js"></script>
 	<script>
-		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":144152,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":146168,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 		const GODOT_THREADS_ENABLED = false;
 
 		// Kanvaasi seuraa ikkunaa. Peli itse pitaa 9:16-kuvasuhteen ja
@@ -105,9 +105,17 @@
 			window.kahvisota.virhe = virhe.textContent;
 		}
 
+		// Latausruutu suomeksi vain jos osoitteessa on lang=fi. Oletus on
+		// englanti, koska demolinkki menee useimmiten ulkomaille ja
+		// latausteksti on ensimmainen asia jonka vastaanottaja nakee.
+		if (location.search.indexOf('lang=fi') !== -1) {
+			document.documentElement.lang = 'fi';
+			document.getElementById('alaotsikko').textContent = 'ladataan areenaa';
+		}
+
 		const puuttuu = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
 		if (puuttuu.length !== 0) {
-			naytaVirhe(new Error('Selaimesta puuttuu:\n' + puuttuu.join('\n')));
+			naytaVirhe(new Error('This browser is missing:\n' + puuttuu.join('\n')));
 		} else {
 			engine.startGame({
 				'onProgress': function (current, total) {
