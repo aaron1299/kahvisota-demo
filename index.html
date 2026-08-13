@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="fi">
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no, viewport-fit=cover">
+	<meta name="robots" content="noindex, nofollow, noarchive">
+	<meta name="copyright" content="© 2026 Aaron Härkönen. Kaikki oikeudet pidätetään.">
+	<title>Kahvisota</title>
+	<!--
+		Kahvisota. © 2026 Aaron Härkönen. Kaikki oikeudet pidätetään.
+		Tämä on esittelyversio. Pelin lähdekoodia, grafiikkaa, ääniä eikä
+		pelimekaniikan toteutusta saa kopioida, purkaa tai käyttää uudelleen
+		ilman kirjallista lupaa. Ottelupalvelin ei sisälly tähän pakettiin.
+	-->
+	<style>
+		html, body {
+			margin: 0;
+			padding: 0;
+			width: 100%;
+			height: 100%;
+			overflow: hidden;
+			background: #0d1117;
+			color: #e8ecf2;
+			font-family: system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+			touch-action: none;
+			overscroll-behavior: none;
+		}
+		#canvas {
+			display: block;
+			width: 100%;
+			height: 100%;
+			border: 0;
+			outline: none;
+			background: #0d1117;
+		}
+		#lataus {
+			position: fixed;
+			inset: 0;
+			display: flex;
+			flex-direction: column;
+			align-items: center;
+			justify-content: center;
+			gap: 18px;
+			background: #0d1117;
+			z-index: 10;
+			transition: opacity .35s ease;
+		}
+		#lataus.piiloon { opacity: 0; pointer-events: none; }
+		#nimi { font-size: 30px; font-weight: 700; letter-spacing: .12em; }
+		#alaotsikko { font-size: 14px; color: #8b94a3; }
+		#palkki { width: min(70vw, 320px); height: 8px; border-radius: 4px; background: #1c2430; overflow: hidden; }
+		#palkki > div { height: 100%; width: 0%; background: #2a6ac8; transition: width .2s ease; }
+		#virhe {
+			display: none;
+			max-width: 80vw;
+			padding: 14px 18px;
+			border-radius: 8px;
+			background: #3a2126;
+			border: 1px solid #7c3b44;
+			font-size: 14px;
+			line-height: 1.4;
+			text-align: center;
+			white-space: pre-wrap;
+		}
+	</style>
+	<link id="-gd-engine-icon" rel="icon" type="image/png" href="index.icon.png" />
+<link rel="apple-touch-icon" href="index.apple-touch-icon.png"/>
+
+</head>
+<body>
+	<canvas id="canvas" tabindex="0">Selaimesi ei tue canvas-elementtia.</canvas>
+
+	<div id="lataus">
+		<div id="nimi">KAHVISOTA</div>
+		<div id="alaotsikko">ladataan areenaa</div>
+		<div id="palkki"><div id="palkki-taytto"></div></div>
+		<div id="virhe"></div>
+	</div>
+
+	<noscript>Peli vaatii JavaScriptin.</noscript>
+
+	<script src="index.js"></script>
+	<script>
+		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":143800,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+		const GODOT_THREADS_ENABLED = false;
+
+		// Kanvaasi seuraa ikkunaa. Peli itse pitaa 9:16-kuvasuhteen ja
+		// palkittaa reunat, joten sama sivu toimii puhelimessa ja iframessa.
+		GODOT_CONFIG['canvasResizePolicy'] = 2;
+
+		const engine = new Engine(GODOT_CONFIG);
+		const lataus = document.getElementById('lataus');
+		const taytto = document.getElementById('palkki-taytto');
+		const virhe = document.getElementById('virhe');
+
+		// Ulkopuolinen valvonta: operaattorin sivu ja testit voivat lukea
+		// tasta, onko peli oikeasti kaynnissa.
+		window.kahvisota = { tila: 'lataa', ruutuja: 0, virhe: null };
+
+		function naytaVirhe(e) {
+			console.error(e);
+			virhe.style.display = 'block';
+			virhe.textContent = (e && e.message) ? e.message : String(e);
+			window.kahvisota.tila = 'virhe';
+			window.kahvisota.virhe = virhe.textContent;
+		}
+
+		const puuttuu = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
+		if (puuttuu.length !== 0) {
+			naytaVirhe(new Error('Selaimesta puuttuu:\n' + puuttuu.join('\n')));
+		} else {
+			engine.startGame({
+				'onProgress': function (current, total) {
+					if (current > 0 && total > 0) {
+						taytto.style.width = Math.round(100 * current / total) + '%';
+					}
+				},
+			}).then(() => {
+				taytto.style.width = '100%';
+				lataus.classList.add('piiloon');
+				setTimeout(() => lataus.remove(), 400);
+				window.kahvisota.tila = 'kaynnissa';
+				document.getElementById('canvas').focus();
+			}, naytaVirhe);
+		}
+	</script>
+</body>
+</html>
+

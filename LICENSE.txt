@@ -1,0 +1,17 @@
+Kahvisota (esittelyversio)
+
+Copyright (c) 2026 Aaron Härkönen. Kaikki oikeudet pidätetään.
+
+Tämä kansio sisältää pelin selainkäännöksen esittelyä varten. Pelin
+lähdekoodia, grafiikkaa, ääniä tai pelimekaniikan toteutusta ei saa
+kopioida, purkaa, kääntää takaisin lähdekoodiksi eikä käyttää uudelleen
+ilman tekijän kirjallista lupaa. Ottelupalvelinta ei julkaista tässä
+paketissa.
+
+All rights reserved. No permission is granted to copy, decompile,
+reverse engineer or reuse any part of this build. The match server is
+not included in this package.
+
+Pelimoottori on Godot Engine (MIT-lisenssi), copyright (c) 2014-present
+Godot Engine contributors, copyright (c) 2007-2014 Juan Linietsky,
+Ariel Manzur. Moottorin lisenssi koskee moottoria, ei tätä peliä.

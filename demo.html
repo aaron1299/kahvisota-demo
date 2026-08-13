@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Kahvisota — skill-based 1v1 for operators</title>
+<style>
+	:root {
+		--bg: #0b1017;
+		--panel: #121a25;
+		--line: #23303f;
+		--gold: #d6ae4c;
+		--gold-soft: #f0c75e;
+		--text: #e8edf4;
+		--dim: #93a1b3;
+	}
+	* { box-sizing: border-box; }
+	body {
+		margin: 0;
+		background: radial-gradient(1200px 700px at 50% -200px, #16273a 0%, var(--bg) 60%);
+		color: var(--text);
+		font: 16px/1.6 system-ui, "Segoe UI", Roboto, Arial, sans-serif;
+	}
+	header {
+		padding: 46px 24px 26px;
+		text-align: center;
+		border-bottom: 1px solid var(--line);
+	}
+	.mark {
+		width: 74px; height: 74px; margin: 0 auto 16px;
+		border-radius: 50%;
+		border: 2px solid var(--gold);
+		display: flex; align-items: center; justify-content: center;
+		font-size: 30px;
+		background: #0a1119;
+	}
+	h1 { margin: 0 0 8px; font-size: 34px; letter-spacing: .04em; }
+	.tag { color: var(--dim); margin: 0 auto; max-width: 720px; }
+	.badges { margin-top: 18px; display: flex; gap: 10px; justify-content: center; flex-wrap: wrap; }
+	.badge {
+		border: 1px solid var(--line); border-radius: 999px;
+		padding: 6px 14px; font-size: 13px; color: var(--gold-soft);
+		background: #101823;
+	}
+	main { max-width: 1180px; margin: 0 auto; padding: 30px 20px 80px; }
+	.split { display: grid; grid-template-columns: minmax(320px, 460px) 1fr; gap: 28px; align-items: start; }
+	@media (max-width: 900px) { .split { grid-template-columns: 1fr; } }
+	.frame {
+		background: #05080d; border: 1px solid var(--line); border-radius: 14px;
+		overflow: hidden; box-shadow: 0 18px 50px rgba(0,0,0,.45);
+	}
+	.frame iframe { display: block; width: 100%; aspect-ratio: 9 / 16; border: 0; }
+	.frame .bar {
+		display: flex; align-items: center; gap: 8px;
+		padding: 10px 12px; border-bottom: 1px solid var(--line);
+		background: #0c141d; font-size: 12px; color: var(--dim);
+	}
+	.dot { width: 9px; height: 9px; border-radius: 50%; background: #2f6; box-shadow: 0 0 8px #2f6a; }
+	.panel { background: var(--panel); border: 1px solid var(--line); border-radius: 14px; padding: 20px 22px; margin-bottom: 20px; }
+	.panel h2 { margin: 0 0 10px; font-size: 19px; color: var(--gold-soft); letter-spacing: .02em; }
+	.panel p { margin: 0 0 12px; color: #c7d2e0; }
+	.panel p:last-child { margin-bottom: 0; }
+	table { width: 100%; border-collapse: collapse; font-size: 14px; }
+	td { padding: 7px 0; border-bottom: 1px solid #1b2634; vertical-align: top; color: #c7d2e0; }
+	td:first-child { color: var(--dim); width: 42%; padding-right: 14px; }
+	tr:last-child td { border-bottom: 0; }
+	.controls { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 4px; }
+	button {
+		font: inherit; font-size: 13px; cursor: pointer;
+		background: #16202c; color: var(--text);
+		border: 1px solid var(--line); border-radius: 8px; padding: 8px 13px;
+	}
+	button:hover { background: #1d2937; }
+	button.gold { background: var(--gold); color: #14100a; border-color: var(--gold); font-weight: 600; }
+	#log {
+		margin-top: 12px; height: 190px; overflow: auto;
+		background: #0a1017; border: 1px solid var(--line); border-radius: 8px;
+		padding: 10px 12px; font: 12px/1.5 ui-monospace, Consolas, monospace; color: #9fd5a8;
+		white-space: pre-wrap;
+	}
+	.note { font-size: 13px; color: #8894a5; }
+	footer { border-top: 1px solid var(--line); padding: 24px; text-align: center; color: #6c7a8c; font-size: 13px; }
+</style>
+</head>
+<body>
+<header>
+	<div class="mark">☕</div>
+	<h1>KAHVISOTA</h1>
+	<p class="tag">A real-time 1v1 arena duel where the outcome is decided by skill alone. No random numbers anywhere in the simulation, a mirrored arena, and every match reproducible from its input log.</p>
+	<div class="badges">
+		<span class="badge">Zero RNG</span>
+		<span class="badge">Server-authoritative</span>
+		<span class="badge">Replay-verifiable</span>
+		<span class="badge">HTML5, no COOP/COEP</span>
+		<span class="badge">EN / FI</span>
+		<span class="badge">Original work, no third-party assets</span>
+	</div>
+</header>
+
+<main>
+<div class="split">
+	<div>
+		<div class="frame">
+			<div class="bar"><span class="dot"></span> live build, playable</div>
+			<iframe id="peli" src="index.html" title="Kahvisota"></iframe>
+		</div>
+		<p class="note" style="margin-top:12px">Practice mode runs against a rule-based bot and needs no server. Stake matches connect to the match server, which runs the only authoritative simulation.</p>
+	</div>
+
+	<div>
+		<div class="panel">
+			<h2>Why an operator would take this</h2>
+			<p>Player versus player with a commission means the house is never a party to the match and carries no game outcome risk. The margin is the commission on settled pots, and a draw refunds both stakes without commission.</p>
+			<p>Because the simulation contains no random source, the usual RNG certification question changes shape entirely. There is no generator to evaluate statistically. What has to be shown instead is that a recorded match replays to the same result, and that check runs from a command line in seconds against the stored input log.</p>
+			<p>Every round carries a visible round identifier and a state checksum on screen and in the settlement record, so a player dispute can be answered with the actual match rather than a log line.</p>
+		</div>
+
+		<div class="panel">
+			<h2>Integration API, live</h2>
+			<p>The game runs in an iframe and speaks a small postMessage protocol in both directions. The log below is the real traffic from the frame on the left. The buttons send operator commands into it.</p>
+			<div class="controls">
+				<button onclick="komento({type:'set_locale', locale:'en'})">set_locale en</button>
+				<button onclick="komento({type:'set_locale', locale:'fi'})">set_locale fi</button>
+				<button onclick="komento({type:'set_balance', balance:500})">set_balance 500</button>
+				<button onclick="komento({type:'set_muted', muted:true})">mute</button>
+				<button onclick="komento({type:'set_muted', muted:false})">unmute</button>
+				<button onclick="komento({type:'open_lobby'})">open_lobby</button>
+				<button class="gold" onclick="document.getElementById('log').textContent=''">clear log</button>
+			</div>
+			<div id="log">waiting for messages from the game frame…</div>
+		</div>
+
+		<div class="panel">
+			<h2>Technical facts</h2>
+			<table>
+				<tr><td>Engine and delivery</td><td>Godot 4.7, HTML5 build of static files, embedded as an iframe</td></tr>
+				<tr><td>Threads</td><td>Single-threaded build, so no COOP or COEP headers are required</td></tr>
+				<tr><td>Download size</td><td>About 40 MB uncompressed, about 10 MB gzipped</td></tr>
+				<tr><td>Orientation</td><td>Portrait 9:16, touch and mouse, mobile first</td></tr>
+				<tr><td>Languages</td><td>English and Finnish, switchable at runtime by the operator</td></tr>
+				<tr><td>Match length</td><td>2 min 30 s, plus 90 s overtime on a tie</td></tr>
+				<tr><td>Netcode</td><td>Lockstep on a fixed 200 ms input delay, identical for both players</td></tr>
+				<tr><td>Anti-cheat</td><td>Server validates every move, clients send state checksums every 2 seconds</td></tr>
+				<tr><td>Records per round</td><td>Input log, final checksum, settlement row with stake, pot and commission</td></tr>
+				<tr><td>Assets</td><td>Every graphic, sound and music cue is generated by our own code at runtime, so the build contains no third-party art or audio</td></tr>
+			</table>
+		</div>
+
+		<div class="panel">
+			<h2>Honest status</h2>
+			<p>This is a working prototype, not a certified product. Verified by running: the deterministic simulation, replay reproduction, mirror symmetry of the arena, a full networked match between two clients, settlement and the post-match verification tool.</p>
+			<p>Not done: authentication against an operator session, a real wallet connection, load testing, balance tuning with live players, a security audit and any test-house certification. Balances shown in the build are demo credits and no money moves anywhere.</p>
+		</div>
+	</div>
+</div>
+</main>
+
+<footer>
+	Kahvisota prototype · 18+ · responsible gaming controls belong to the operator account layer
+</footer>
+
+<script>
+	const loki = document.getElementById('log');
+	const kehys = document.getElementById('peli');
+
+	function kirjaa(suunta, data) {
+		const aika = new Date().toISOString().substring(11, 19);
+		loki.textContent += `${aika} ${suunta} ${JSON.stringify(data)}\n`;
+		loki.scrollTop = loki.scrollHeight;
+	}
+
+	window.addEventListener('message', (e) => {
+		let data = e.data;
+		if (typeof data === 'string') {
+			try { data = JSON.parse(data); } catch (err) { return; }
+		}
+		if (!data || data.source !== 'kahvisota') return;
+		kirjaa('<-', data);
+	});
+
+	function komento(viesti) {
+		kehys.contentWindow.postMessage(viesti, '*');
+		kirjaa('->', viesti);
+	}
+</script>
+</body>
+</html>
