@@ -32,6 +32,8 @@
 			border: 0;
 			outline: none;
 			background: #0d1117;
+			touch-action: none;
+			-webkit-tap-highlight-color: transparent;
 		}
 		#lataus {
 			position: fixed;
@@ -120,13 +122,30 @@
 		if (puuttuu.length !== 0) {
 			naytaVirhe(new Error('This browser is missing:\n' + puuttuu.join('\n')));
 		} else {
+			// Puhelimessa 40 megatavun paketti voi jaada lataamaan pitkaksi
+			// aikaa tai loppua muistiin. Kerrotaan se kayttajalle sen sijaan
+			// etta han tuijottaisi liikkumatonta palkkia.
+			const hidasVaroitus = setTimeout(() => {
+				const a = document.getElementById('alaotsikko');
+				if (a) {
+					a.textContent = suomeksi
+						? 'lataus kestää tavallista kauemmin, paketti on 40 Mt'
+						: 'this is taking longer than usual, the build is 40 MB';
+				}
+			}, 25000);
 			engine.startGame({
 				'onProgress': function (current, total) {
 					if (current > 0 && total > 0) {
-						taytto.style.width = Math.round(100 * current / total) + '%';
+						const osuus = Math.round(100 * current / total);
+						taytto.style.width = osuus + '%';
+						const a = document.getElementById('alaotsikko');
+						if (a) {
+							a.textContent = (suomeksi ? 'ladataan areenaa ' : 'loading the arena ') + osuus + ' %';
+						}
 					}
 				},
 			}).then(() => {
+				clearTimeout(hidasVaroitus);
 				taytto.style.width = '100%';
 				lataus.classList.add('piiloon');
 				setTimeout(() => lataus.remove(), 400);
