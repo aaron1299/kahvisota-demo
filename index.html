@@ -111,6 +111,11 @@
 			white-space: pre-wrap;
 		}
 		#virhe {
+			position: fixed;
+			left: 50%;
+			top: 14%;
+			transform: translateX(-50%);
+			z-index: 40;
 			display: none;
 			max-width: 80vw;
 			padding: 14px 18px;
@@ -134,8 +139,12 @@
 		<div id="nimi">KAHVISOTA</div>
 		<div id="alaotsikko">loading the arena</div>
 		<div id="palkki"><div id="palkki-taytto"></div></div>
-		<div id="virhe"></div>
 	</div>
+
+	<!-- Virheilmoitus on latausruudun ULKOPUOLELLA. Latausruutu poistetaan
+	     DOM:sta kun peli kaynnistyy, ja sisalla oleva ilmoitus katosi sen
+	     mukana, jolloin kaynnistyksen jalkeiset virheet jaivat nakymatta. -->
+	<div id="virhe"></div>
 
 	<div id="sovellusselain">
 		<h1>KAHVISOTA</h1>
@@ -151,7 +160,7 @@
 
 	<script src="index.js"></script>
 	<script>
-		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":148600,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":148792,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 		const GODOT_THREADS_ENABLED = false;
 
 		// Kanvaasi seuraa ikkunaa. Peli itse pitaa 9:16-kuvasuhteen ja
@@ -224,6 +233,44 @@
 			let rafHz = 0;
 			(function laske() { rafRuutuja += 1; requestAnimationFrame(laske); })();
 			setInterval(() => { rafHz = rafRuutuja; rafRuutuja = 0; }, 1000);
+			// Ratkaiseva erotteleva koe. Kanvaasin oma piirtopuskuri luetaan
+			// 16 x 16 -kokoon pienennettyna ja katsotaan muuttuuko se.
+			// elava  = puskuri paivittyy, kuva on jaassa vasta nayton puolella
+			// JAASSA = esityskopio ei laskeudu lainkaan
+			const nayte = document.createElement('canvas');
+			nayte.width = 16;
+			nayte.height = 16;
+			const nayteCtx = nayte.getContext('2d', { willReadFrequently: true });
+			let edellinenTiiviste = null;
+			let puskuriMuutoksia = 0;
+			let puskuriTila = '?';
+			setInterval(() => {
+				try {
+					nayteCtx.drawImage(kanvaasi, 0, 0, 16, 16);
+					const d = nayteCtx.getImageData(0, 0, 16, 16).data;
+					let h = 0;
+					for (let i = 0; i < d.length; i += 4) {
+						h = (h * 31 + d[i] + d[i + 1] * 3 + d[i + 2] * 7) | 0;
+					}
+					if (edellinenTiiviste !== null && h !== edellinenTiiviste) {
+						puskuriMuutoksia += 1;
+					}
+					edellinenTiiviste = h;
+					puskuriTila = puskuriMuutoksia > 0 ? ('elava ' + puskuriMuutoksia) : 'JAASSA';
+				} catch (e) {
+					puskuriTila = 'ei luettavissa';
+				}
+			}, 500);
+
+			// Pelin oma ruutunopeus erikseen selaimen taajuudesta.
+			let edellinenSekunti = 0;
+			let pelinFps = 0;
+			setInterval(() => {
+				const nyt = (window.kahvisota && window.kahvisota.ruutuja) || 0;
+				pelinFps = nyt - edellinenSekunti;
+				edellinenSekunti = nyt;
+			}, 1000);
+
 			let edellinenRuutu = -1;
 			let jumissa = 0;
 			setInterval(() => {
@@ -236,7 +283,8 @@
 					+ '  ' + (k.syote || '-') + '\n'
 					+ 'ruutuja piirretty: ' + (k.ruutuja === undefined ? 'EI TIETOA' : k.ruutuja)
 					+ (jumissa > 2 ? '  PYSAHTYNYT' : '  kay') + '\n'
-					+ 'selain paivittaa: ' + rafHz + '/s   grafiikka: ' + (window.kahvisotaGL || '?') + '\n'
+					+ 'pelin fps: ' + pelinFps + '   selain paivittaa: ' + rafHz + '/s\n'
+					+ 'piirtopuskuri: ' + puskuriTila + '   grafiikka: ' + (window.kahvisotaGL || '?') + '\n'
 					+ 'nakyma: ' + (k.nakyma || k.tila || '-')
 					+ '   dpr ' + (window.devicePixelRatio || 1)
 					+ '   ' + Math.round(kanvaasi.getBoundingClientRect().width) + 'x'
@@ -290,6 +338,21 @@
 				setTimeout(() => lataus.remove(), 400);
 				window.kahvisota.tila = 'kaynnissa';
 				document.getElementById('canvas').focus();
+				// iOS ei aina paivita WebGL-kerrosta naytolle, vaikka peli
+				// piirtaa. Mitaton opasiteetin heilutus merkitsee kerroksen
+				// likaiseksi joka ruudulla ja pakottaa uudelleenkomposition.
+				// Opasiteetti valittiin siksi, ettei se muuta canvasin
+				// sijaintia, johon Godotin kosketuskartoitus perustuu.
+				// Osoitteen ?nyi=0 sammuttaa taman vertailua varten.
+				if (puhelin && location.search.indexOf('nyi=0') === -1) {
+					const kv = document.getElementById('canvas');
+					let vuoro = 0;
+					(function nyi() {
+						vuoro ^= 1;
+						kv.style.opacity = vuoro ? '1' : '0.999';
+						requestAnimationFrame(nyi);
+					})();
+				}
 			}, naytaVirhe);
 		}
 
