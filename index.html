@@ -232,19 +232,10 @@
 			|| (window.matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820);
 		const ohitaPortti = location.search.indexOf('mobiili=1') !== -1;
 
-		// Puhelimessa piirtopuskuri kasvaa nayton pikselitiheydella. iPhone 12
-		// ajaisi 1170 x 1989 pikselia eli yli kaksi megapikselia joka ruudulla.
-		// Lukitaan suhde yhteen, jolloin tyota on yhdeksasosa. Peli piirtyy
-		// pehmeampana mutta pyorii.
+		// Pikselitiheyden lukitseminen yhteen kokeiltiin: se teki kuvasta sumean
+		// eika nopeuttanut mitaan, joten tiheys jatetaan nayton omaksi.
+		// Ruutukatto asetetaan pelin puolella tata lippua lukemalla.
 		window.kahvisotaPuhelin = puhelin;
-		if (puhelin) {
-			try {
-				Object.defineProperty(window, 'devicePixelRatio', {
-					get: function () { return 1; },
-					configurable: true,
-				});
-			} catch (e) { /* selain ei salli, jatketaan tiheydella */ }
-		}
 
 		function kaynnista() {
 			// Puhelimessa 40 megatavun paketti voi jaada lataamaan pitkaksi
