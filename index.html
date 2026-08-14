@@ -151,7 +151,7 @@
 
 	<script src="index.js"></script>
 	<script>
-		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":148504,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
+		const GODOT_CONFIG = {"args":[],"canvasResizePolicy":2,"emscriptenPoolSize":8,"ensureCrossOriginIsolationHeaders":true,"executable":"index","experimentalVK":false,"fileSizes":{"index.pck":148600,"index.wasm":39513091},"focusCanvas":true,"gdextensionLibs":[],"godotPoolSize":4};
 		const GODOT_THREADS_ENABLED = false;
 
 		// Kanvaasi seuraa ikkunaa. Peli itse pitaa 9:16-kuvasuhteen ja
@@ -231,6 +231,20 @@
 			|| (/iPad|Macintosh/.test(kayttajaAgentti) && navigator.maxTouchPoints > 1)
 			|| (window.matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820);
 		const ohitaPortti = location.search.indexOf('mobiili=1') !== -1;
+
+		// Puhelimessa piirtopuskuri kasvaa nayton pikselitiheydella. iPhone 12
+		// ajaisi 1170 x 1989 pikselia eli yli kaksi megapikselia joka ruudulla.
+		// Lukitaan suhde yhteen, jolloin tyota on yhdeksasosa. Peli piirtyy
+		// pehmeampana mutta pyorii.
+		window.kahvisotaPuhelin = puhelin;
+		if (puhelin) {
+			try {
+				Object.defineProperty(window, 'devicePixelRatio', {
+					get: function () { return 1; },
+					configurable: true,
+				});
+			} catch (e) { /* selain ei salli, jatketaan tiheydella */ }
+		}
 
 		function kaynnista() {
 			// Puhelimessa 40 megatavun paketti voi jaada lataamaan pitkaksi
