@@ -52,6 +52,22 @@
 		#alaotsikko { font-size: 14px; color: #8b94a3; }
 		#palkki { width: min(70vw, 320px); height: 8px; border-radius: 4px; background: #1c2430; overflow: hidden; }
 		#palkki > div { height: 100%; width: 0%; background: #2a6ac8; transition: width .2s ease; }
+		#mittari {
+			position: fixed;
+			top: 0;
+			left: 0;
+			right: 0;
+			z-index: 20;
+			display: none;
+			padding: 6px 8px;
+			background: rgba(0,0,0,.72);
+			color: #7ee08a;
+			font-family: monospace;
+			font-size: 12px;
+			line-height: 1.5;
+			pointer-events: none;
+			white-space: pre-wrap;
+		}
 		#virhe {
 			display: none;
 			max-width: 80vw;
@@ -78,6 +94,8 @@
 		<div id="palkki"><div id="palkki-taytto"></div></div>
 		<div id="virhe"></div>
 	</div>
+
+	<div id="mittari"></div>
 
 	<noscript>This game requires JavaScript.</noscript>
 
@@ -116,6 +134,42 @@
 		if (suomeksi) {
 			document.documentElement.lang = 'fi';
 			document.getElementById('alaotsikko').textContent = 'ladataan areenaa';
+		}
+
+		// Vianetsintamittari. Nakyy vain osoitteella ?debug=1. Kertoo erikseen
+		// montako kosketusta sivu saa, montako niista paatyy moottoriin ja
+		// piirtaako peli uusia ruutuja. Nailla kolmella luvulla nakee heti,
+		// kaatuuko mobiilikaytto selaimeen, moottoriin vai pelilogiikkaan.
+		if (location.search.indexOf('debug=1') !== -1) {
+			const mittari = document.getElementById('mittari');
+			mittari.style.display = 'block';
+			let sivunKosketukset = 0;
+			let viimeinenTyyppi = '-';
+			const kanvaasi = document.getElementById('canvas');
+			['touchstart', 'pointerdown', 'mousedown'].forEach((t) => {
+				kanvaasi.addEventListener(t, (e) => {
+					sivunKosketukset += 1;
+					viimeinenTyyppi = t + (e.pointerType ? '/' + e.pointerType : '');
+				}, { capture: true, passive: true });
+			});
+			let edellinenRuutu = -1;
+			let jumissa = 0;
+			setInterval(() => {
+				const k = window.kahvisota || {};
+				if (k.ruutuja === edellinenRuutu) { jumissa += 1; } else { jumissa = 0; }
+				edellinenRuutu = k.ruutuja;
+				mittari.textContent =
+					'sivu sai kosketuksia: ' + sivunKosketukset + '  (' + viimeinenTyyppi + ')\n'
+					+ 'peli sai syotteita: ' + (k.syotteita === undefined ? 'EI TIETOA' : k.syotteita)
+					+ '  ' + (k.syote || '-') + '\n'
+					+ 'ruutuja piirretty: ' + (k.ruutuja === undefined ? 'EI TIETOA' : k.ruutuja)
+					+ (jumissa > 2 ? '  PYSAHTYNYT' : '  kay') + '\n'
+					+ 'nakyma: ' + (k.nakyma || k.tila || '-')
+					+ '   dpr ' + (window.devicePixelRatio || 1)
+					+ '   ' + Math.round(kanvaasi.getBoundingClientRect().width) + 'x'
+					+ Math.round(kanvaasi.getBoundingClientRect().height)
+					+ ' / ' + kanvaasi.width + 'x' + kanvaasi.height;
+			}, 400);
 		}
 
 		const puuttuu = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
