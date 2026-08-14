@@ -186,6 +186,21 @@
 			document.getElementById('alaotsikko').textContent = 'ladataan areenaa';
 		}
 
+		// WebGL-konteksti voi kadota puhelimessa muistipaineessa. Silloin peli
+		// jatkaa ajamista mutta kuva jaa viimeiseen ruutuun. Ilman tata
+		// kasittelya se nayttaa taysin samalta kuin jumittunut peli.
+		window.kahvisotaGL = 'ok';
+		document.getElementById('canvas').addEventListener('webglcontextlost', function (e) {
+			e.preventDefault();
+			window.kahvisotaGL = 'menetetty';
+			naytaVirhe(new Error(suomeksi
+				? 'Selain vapautti pelin grafiikkamuistin. Lataa sivu uudelleen.'
+				: 'The browser released the graphics context. Please reload the page.'));
+		}, false);
+		document.getElementById('canvas').addEventListener('webglcontextrestored', function () {
+			window.kahvisotaGL = 'palautettu';
+		}, false);
+
 		// Vianetsintamittari. Nakyy vain osoitteella ?debug=1. Kertoo erikseen
 		// montako kosketusta sivu saa, montako niista paatyy moottoriin ja
 		// piirtaako peli uusia ruutuja. Nailla kolmella luvulla nakee heti,
@@ -202,6 +217,13 @@
 					viimeinenTyyppi = t + (e.pointerType ? '/' + e.pointerType : '');
 				}, { capture: true, passive: true });
 			});
+			// Selaimen oma ruudunpaivitys. Jos tama kay 60:aa mutta pelin
+			// piirtolaskuri ei liiku, vika on pelissa. Jos tamakin ryomii,
+			// selain kuristaa koko sivun.
+			let rafRuutuja = 0;
+			let rafHz = 0;
+			(function laske() { rafRuutuja += 1; requestAnimationFrame(laske); })();
+			setInterval(() => { rafHz = rafRuutuja; rafRuutuja = 0; }, 1000);
 			let edellinenRuutu = -1;
 			let jumissa = 0;
 			setInterval(() => {
@@ -214,6 +236,7 @@
 					+ '  ' + (k.syote || '-') + '\n'
 					+ 'ruutuja piirretty: ' + (k.ruutuja === undefined ? 'EI TIETOA' : k.ruutuja)
 					+ (jumissa > 2 ? '  PYSAHTYNYT' : '  kay') + '\n'
+					+ 'selain paivittaa: ' + rafHz + '/s   grafiikka: ' + (window.kahvisotaGL || '?') + '\n'
 					+ 'nakyma: ' + (k.nakyma || k.tila || '-')
 					+ '   dpr ' + (window.devicePixelRatio || 1)
 					+ '   ' + Math.round(kanvaasi.getBoundingClientRect().width) + 'x'
