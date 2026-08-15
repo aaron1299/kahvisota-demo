@@ -10,6 +10,8 @@ import * as Kieli from './kieli.js';
 import * as Piirto from './piirto.js';
 import * as Aani from './aani.js';
 import * as Operaattori from './operaattori.js';
+import { Verkko, palvelimenOsoite } from './verkko.js';
+import { rahaksi, RAKE_PPM_OLETUS } from './kirjanpito.js';
 
 const kanvaasi = document.getElementById('peli');
 const ctx = kanvaasi.getContext('2d');
@@ -61,6 +63,10 @@ const peli = {
 	sessioAlku: Date.now(),
 	muistutuksia: 0,
 	lisaaikaSoi: false,
+	// verkko-ottelu
+	verkko: null,
+	verkkoOttelu: false,
+	panos: 0,
 	// toisto
 	toisto: null,
 	toistoLoppu: 0,
@@ -181,7 +187,7 @@ function paavalikko() {
 	s.textContent = Kieli.t('saldo', [raha(peli.saldo)]);
 	l.appendChild(s);
 	l.appendChild(nappi(Kieli.t('harjoitus'), tasovalikko, true));
-	l.appendChild(nappi(Kieli.t('panos'), () => sivu(Kieli.t('panos'), Kieli.t('ei_palvelinta'))));
+	l.appendChild(nappi(Kieli.t('panos'), panosvalikko));
 	if (localStorage.getItem(TOISTOAVAIN)) l.appendChild(nappi(Kieli.t('toisto'), avaaToisto));
 	l.appendChild(nappi(Kieli.t('taito_otsikko'), () => sivu(Kieli.t('taito_otsikko'), Kieli.t('taito_teksti'))));
 	l.appendChild(nappi(Kieli.t('saannot'), saantovalikko));
@@ -218,6 +224,127 @@ function tasovalikko() {
 		l.appendChild(nappi(teksti, () => aloitaHarjoitus(vaste), vaste === 15));
 	}
 	l.appendChild(nappi(Kieli.t('takaisin'), paavalikko));
+}
+
+// ---- panosottelu ------------------------------------------------------------
+
+function panosvalikko() {
+	if (!palvelimenOsoite()) {
+		sivu(Kieli.t('panos'), Kieli.t('ei_palvelinta'));
+		return;
+	}
+	peli.tila = 'sivu';
+	const l = valikkoJuuri();
+	const h = document.createElement('h2');
+	h.textContent = Kieli.t('panos_otsikko');
+	l.appendChild(h);
+	const p = document.createElement('p');
+	p.className = 'leipa';
+	p.textContent = Kieli.t('panos_komissio', [(RAKE_PPM_OLETUS / 10000).toFixed(1).replace('.', ',')]);
+	l.appendChild(p);
+	for (const panos of [100, 500, 2000]) {
+		l.appendChild(nappi(Kieli.t('panos_rivi', [rahaksi(panos, Kieli.kieli === 'fi' ? ',' : '.')]),
+			() => liitaJonoon(panos), panos === 500));
+	}
+	l.appendChild(nappi(Kieli.t('takaisin'), paavalikko));
+}
+
+function liitaJonoon(panos) {
+	peli.tila = 'sivu';
+	const l = valikkoJuuri();
+	const h = document.createElement('h2');
+	h.textContent = Kieli.t('jono_etsitaan');
+	l.appendChild(h);
+	const tila = document.createElement('p');
+	tila.className = 'leipa';
+	tila.textContent = Kieli.t('panos_rivi', [rahaksi(panos, Kieli.kieli === 'fi' ? ',' : '.')]);
+	l.appendChild(tila);
+	l.appendChild(nappi(Kieli.t('jono_peru'), () => {
+		if (peli.verkko) peli.verkko.katkaise();
+		peli.verkko = null;
+		paavalikko();
+	}));
+
+	peli.verkko = new Verkko({
+		jono: (teksti) => { tila.textContent = teksti; },
+		alku: (v) => aloitaVerkkoOttelu(v),
+		tikki: (tick, syotteet) => {
+			if (peli.tila !== 'ottelu' || !peli.sim) return;
+			peli.sim.step(syotteet);
+			aanetTapahtumista(peli.sim);
+			if (peli.sim.overtime && !peli.lisaaikaSoi) {
+				peli.lisaaikaSoi = true;
+				Aani.asetaTila('lisaaika');
+			}
+		},
+		summapyynto: () => {
+			if (peli.sim && peli.verkko) peli.verkko.summa(peli.sim.tick, peli.sim.stateHash());
+		},
+		loppu: (v) => verkkoOtteluLoppui(v),
+		virhe: (syy) => {
+			peli.verkko = null;
+			sivu(Kieli.t('panos'), syy === 'ei_palvelinta' ? Kieli.t('ei_palvelinta') : Kieli.t('yhteys_katkesi'));
+		},
+		katkesi: () => {
+			if (peli.tila === 'ottelu' && peli.verkkoOttelu) {
+				peli.verkko = null;
+				sivu(Kieli.t('panos'), Kieli.t('yhteys_katkesi'));
+			}
+		},
+	});
+	peli.verkko.yhdista(panos);
+}
+
+function aloitaVerkkoOttelu(v) {
+	peli.sim = new Sim();
+	peli.botti = null;
+	peli.oma = v.puoli;
+	peli.valittu = -1;
+	peli.kertyma = 0;
+	peli.lisaaikaSoi = false;
+	peli.tunnus = v.tunnus;
+	peli.panos = v.panos;
+	peli.verkkoOttelu = true;
+	peli.tila = 'ottelu';
+	jono.length = 0;
+	naytaValikko(false);
+	Aani.asetaTila('ottelu');
+	Operaattori.laheta('round_start', { roundId: v.tunnus, stake: v.panos, mode: 'stake' });
+}
+
+function verkkoOtteluLoppui(v) {
+	const s = peli.sim;
+	peli.verkkoOttelu = false;
+	tallennaToisto(s, v.checksum);
+	peli.saldo += v.maksu - peli.panos;
+	Aani.asetaTila('valikko');
+	const voitto = v.tulos === peli.oma;
+	Aani.soita(voitto ? 'voitto' : 'tappio');
+	if (voitto) Aani.soitaTunnus(1.12);
+	Operaattori.laheta('round_end', {
+		roundId: v.tunnus, result: v.tulos, payout: v.maksu,
+		checksum: v.checksum, replayId: 'viimeisin',
+	});
+	Operaattori.laheta('balance_update', { balance: peli.saldo });
+	if (peli.verkko) peli.verkko.katkaise();
+	peli.verkko = null;
+
+	const l = valikkoJuuri();
+	const h = document.createElement('h2');
+	if (v.tulos === RESULT_TASAPELI) h.textContent = Kieli.t('tasapeli');
+	else h.textContent = voitto ? Kieli.t('voitto') : Kieli.t('tappio');
+	l.appendChild(h);
+	const erotin = Kieli.kieli === 'fi' ? ',' : '.';
+	const tiedot = document.createElement('p');
+	tiedot.className = 'leipa';
+	tiedot.textContent = Kieli.t('tilitys', [rahaksi(v.potti, erotin), rahaksi(v.rake, erotin), rahaksi(v.maksu, erotin)])
+		+ '\n' + Kieli.t('kaadot', [s.kaadot[peli.oma], s.kaadot[1 - peli.oma]])
+		+ '\n' + Kieli.t('tunnus', [v.tunnus])
+		+ '\n' + Kieli.t('summa', [v.checksum]);
+	l.appendChild(tiedot);
+	l.appendChild(nappi(Kieli.t('toisto'), avaaToisto));
+	l.appendChild(nappi(Kieli.t('valikkoon'), paavalikko));
+	peli.tila = 'tulos';
 }
 
 function sivu(otsikko, teksti) {
@@ -433,7 +560,14 @@ kanvaasi.addEventListener('pointerdown', (e) => {
 	const sx = Math.round(x * Piirto.U);
 	const sy = Math.round(y * Piirto.U);
 	if (peli.sim.canDeploy(peli.oma, avain, sx, sy)) {
-		jono.push({ team: peli.oma, card: avain, x: sx, y: sy });
+		if (peli.verkkoOttelu && peli.verkko) {
+			// Palvelin paattaa mihin tikkiin syote osuu, joten sita ei
+			// koskaan ajeta paikallisesti etukateen.
+			peli.verkko.syote(avain, sx, sy);
+			Aani.soita('kahvi');
+		} else {
+			jono.push({ team: peli.oma, card: avain, x: sx, y: sy });
+		}
 		peli.valittu = -1;
 	} else {
 		Aani.soita('varoitus', 1.4);
@@ -460,7 +594,12 @@ function askel(nyt) {
 	edellinen = nyt;
 	peli.aika += dt;
 
-	if (peli.tila === 'ottelu' && peli.sim) {
+	if (peli.tila === 'ottelu' && peli.sim && peli.verkkoOttelu) {
+		// Verkko-ottelussa palvelin tahdittaa: simulaatio etenee vain
+		// palvelimen lahettamien tikkien mukana, jolloin molemmat pelaajat
+		// ovat aina samassa tilassa.
+		tarkistaMuistutus();
+	} else if (peli.tila === 'ottelu' && peli.sim) {
 		peli.kertyma += dt;
 		let turva = 0;
 		while (peli.kertyma >= 1 / TPS && turva < 8) {
