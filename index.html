@@ -261,19 +261,10 @@
 
 		window.kahvisotaPuhelin = puhelin;
 
-		// iPhonen grafiikkamuisti on tiukassa. Kolmen pikselin tiheydella
-		// piirtopuskuri olisi 1170 x 1989 eli 2,3 megapikselia, ja mitattuna
-		// laitteella WebGL-konteksti menetettiin kesken pelin. Katkaistaan
-		// tiheys kahteen: kuva pysyy teravana mutta puskuri on alle puolet.
-		// Tiheyteen 1 lukitseminen kokeiltiin aiemmin ja se nakyi sumeutena.
-		if (puhelin && (window.devicePixelRatio || 1) > 2) {
-			try {
-				Object.defineProperty(window, 'devicePixelRatio', {
-					get: function () { return 2; },
-					configurable: true,
-				});
-			} catch (e) { /* selain ei salli, jatketaan nayton tiheydella */ }
-		}
+		// Pikselitiheyden pakottamista kokeiltiin kahdesti. Arvo 1 teki kuvasta
+		// sumean, ja arvo 2 siirsi WebGL-kontekstin menetyksen kesken pelin
+		// sijaan jo latausvaiheeseen, koska Godot mitoittaa kanvaasin itse ja
+		// vaarennetty tiheys sotkee sen. Tiheys jatetaan nayton omaksi.
 
 		function kaynnista() {
 			// Puhelimessa 40 megatavun paketti voi jaada lataamaan pitkaksi
