@@ -52,48 +52,6 @@
 		#alaotsikko { font-size: 14px; color: #8b94a3; }
 		#palkki { width: min(70vw, 320px); height: 8px; border-radius: 4px; background: #1c2430; overflow: hidden; }
 		#palkki > div { height: 100%; width: 0%; background: #2a6ac8; transition: width .2s ease; }
-		#sovellusselain {
-			position: fixed;
-			inset: 0;
-			z-index: 30;
-			display: none;
-			flex-direction: column;
-			align-items: center;
-			justify-content: center;
-			gap: 16px;
-			padding: 24px;
-			background: #0d1117;
-			text-align: center;
-		}
-		#sovellusselain h1 { font-size: 22px; margin: 0; letter-spacing: .06em; }
-		#sovellusselain p { margin: 0; max-width: 30em; font-size: 15px; line-height: 1.5; color: #b6bfcd; }
-		#osoiterivi {
-			width: min(90vw, 420px);
-			padding: 10px 12px;
-			border-radius: 8px;
-			border: 1px solid #2a3444;
-			background: #131a24;
-			color: #e8ecf2;
-			font-size: 13px;
-			font-family: monospace;
-			text-align: center;
-		}
-		#sovellusselain button {
-			padding: 12px 22px;
-			border: 0;
-			border-radius: 8px;
-			background: #d8b661;
-			color: #1a1408;
-			font-size: 15px;
-			font-weight: 600;
-		}
-		#jatka-silti {
-			background: none;
-			color: #8b94a3;
-			font-size: 13px;
-			font-weight: 400;
-			text-decoration: underline;
-		}
 		#mittari {
 			position: fixed;
 			top: 0;
@@ -146,13 +104,6 @@
 	     mukana, jolloin kaynnistyksen jalkeiset virheet jaivat nakymatta. -->
 	<div id="virhe"></div>
 
-	<div id="sovellusselain">
-		<h1>KAHVISOTA</h1>
-		<p id="selainohje"></p>
-		<input id="osoiterivi" readonly>
-		<button id="kopioi"></button>
-		<button id="jatka-silti"></button>
-	</div>
 
 	<div id="mittari"></div>
 
@@ -293,15 +244,12 @@
 			}, 400);
 		}
 
-		// Puhelinportti. Kosketuskaytto ei ole taman koontiversion osalta
-		// varmistettu, joten puhelimessa naytetaan selkea ilmoitus sen sijaan
-		// etta kayttaja jaisi tuijottamaan valikkoa joka ei reagoi. Osoitteen
-		// parametri ?mobiili=1 ohittaa portin testausta varten.
+		// Puhelin tunnistetaan yha, mutta vain kuvan paivityksen pakottamista
+		// varten. Peli kaynnistyy puhelimessa normaalisti.
 		const kayttajaAgentti = navigator.userAgent || '';
 		const puhelin = /iPhone|iPod|Android.*Mobile/.test(kayttajaAgentti)
 			|| (/iPad|Macintosh/.test(kayttajaAgentti) && navigator.maxTouchPoints > 1)
 			|| (window.matchMedia('(pointer: coarse)').matches && Math.min(screen.width, screen.height) < 820);
-		const ohitaPortti = location.search.indexOf('mobiili=1') !== -1;
 
 		// Pikselitiheyden lukitseminen yhteen kokeiltiin: se teki kuvasta sumean
 		// eika nopeuttanut mitaan, joten tiheys jatetaan nayton omaksi.
@@ -359,41 +307,6 @@
 		const puuttuu = Engine.getMissingFeatures({ threads: GODOT_THREADS_ENABLED });
 		if (puuttuu.length !== 0) {
 			naytaVirhe(new Error('This browser is missing:\n' + puuttuu.join('\n')));
-		} else if (puhelin && !ohitaPortti) {
-			const portti = document.getElementById('sovellusselain');
-			portti.style.display = 'flex';
-			lataus.style.display = 'none';
-			document.getElementById('selainohje').textContent = suomeksi
-				? 'Tämä demo on rakennettu työpöytäselaimelle. Avaa osoite tietokoneella, niin peli toimii täysipainoisesti.'
-				: 'This demo is built for desktop browsers. Open the address on a computer for the full experience.';
-			const kentta = document.getElementById('osoiterivi');
-			kentta.value = location.origin + location.pathname;
-			const kopioi = document.getElementById('kopioi');
-			kopioi.textContent = suomeksi ? 'Kopioi osoite' : 'Copy the address';
-			kopioi.addEventListener('click', () => {
-				const teksti = kentta.value;
-				const valmis = () => {
-					kopioi.textContent = suomeksi ? 'Kopioitu' : 'Copied';
-				};
-				if (navigator.clipboard && navigator.clipboard.writeText) {
-					navigator.clipboard.writeText(teksti).then(valmis, () => {
-						kentta.select();
-						document.execCommand('copy');
-						valmis();
-					});
-				} else {
-					kentta.select();
-					document.execCommand('copy');
-					valmis();
-				}
-			});
-			const silti = document.getElementById('jatka-silti');
-			silti.textContent = suomeksi ? 'Avaa silti tällä puhelimella' : 'Open on this phone anyway';
-			silti.addEventListener('click', () => {
-				portti.style.display = 'none';
-				lataus.style.display = 'flex';
-				kaynnista();
-			});
 		} else {
 			kaynnista();
 		}
