@@ -265,6 +265,19 @@
 		// sumean, ja arvo 2 siirsi WebGL-kontekstin menetyksen kesken pelin
 		// sijaan jo latausvaiheeseen, koska Godot mitoittaa kanvaasin itse ja
 		// vaarennetty tiheys sotkee sen. Tiheys jatetaan nayton omaksi.
+		//
+		// Sen sijaan kaytetaan moottorin omaa keinoa. Kokopolitiikka 1 pitaa
+		// piirtopuskurin kiinteassa 720 x 1280 -koossa ja CSS venyttaa sen
+		// ruudulle. iPhonella puskuri oli 1170 x 1989 eli 2,3 megapikselia,
+		// nyt 0,9. Tama on Godotin tukema tapa, eika se sotke kosketuksen
+		// kohdistusta, koska moottori skaalaa syotteen canvasin todellisen
+		// koon ja CSS-koon suhteella.
+		if (puhelin) {
+			GODOT_CONFIG['canvasResizePolicy'] = 1;
+			const kv = document.getElementById('canvas');
+			kv.width = 720;
+			kv.height = 1280;
+		}
 
 		function kaynnista() {
 			// Puhelimessa 40 megatavun paketti voi jaada lataamaan pitkaksi
