@@ -209,6 +209,25 @@ export function leivoHahmot() {
 	return c;
 }
 
+// ---- valmiit hahmokuvat -----------------------------------------------------
+//
+// Jos kansiossa kuvat/ on tiedosto <kortin avain>.png, sita kaytetaan
+// piirretyn hahmon sijasta. Nain kuvat voi vaihtaa pudottamalla tiedostot
+// paikalleen ilman yhtaan muutosta koodiin, ja jos kuva puuttuu, peli piirtaa
+// hahmon kuten ennenkin eika mikaan hajoa.
+
+export const hahmokuvat = new Map();
+
+export function lataaHahmokuvat(kansio = './kuvat/') {
+	const lupaukset = Cards.ORDER.map((avain) => new Promise((valmis) => {
+		const kuva = new Image();
+		kuva.onload = () => { hahmokuvat.set(avain, kuva); valmis(true); };
+		kuva.onerror = () => valmis(false);
+		kuva.src = kansio + avain + '.png';
+	}));
+	return Promise.all(lupaukset).then((tulokset) => tulokset.filter(Boolean).length);
+}
+
 export function hahmoRuutu(tyyppi, oma, vaihe) {
 	const t = Cards.cardIndex(tyyppi);
 	if (t < 0) return null;
@@ -346,6 +365,22 @@ function hahmo(p, tyyppi, x, y, vari, suunta, vaihe) {
 }
 
 // ---- rakennukset ------------------------------------------------------------
+
+// Yksikko valmiista kuvasta. Maassa oleva varirengas kertoo puolen, koska
+// sama kuva kelpaa molemmille joukkueille eika sita varjata.
+export function piirraKuvahahmo(p, kuva, x, y, oma, vaihe, koko = SOLU) {
+	const heilu = Math.sin(vaihe) * 1.6;
+	const kallistus = Math.sin(vaihe) * 0.05;
+	p.fillStyle = (oma ? VARI_OMA : VARI_VASTUS) + '55';
+	p.beginPath(); p.ellipse(x, y + koko * 0.30, koko * 0.26, koko * 0.10, 0, 0, Math.PI * 2); p.fill();
+	p.fillStyle = 'rgba(0,0,0,.16)';
+	p.beginPath(); p.ellipse(x, y + koko * 0.30, koko * 0.17, koko * 0.06, 0, 0, Math.PI * 2); p.fill();
+	p.save();
+	p.translate(x, y + heilu);
+	p.rotate(kallistus);
+	p.drawImage(kuva, -koko / 2, -koko / 2, koko, koko);
+	p.restore();
+}
 
 export function piirraRakennus(p, e, oma) {
 	const x = px(e.x);
