@@ -93,3 +93,26 @@ sanoista. Vertaa hahmoja rinnakkain samassa koossa ennen kuin hyväksyt.
 Läpinäkyvä tausta oikeasti läpinäkyvä eikä valkoinen. Hahmo mahtuu neliöön
 eikä leikkaudu reunasta. Kaikki kahdeksan näyttävät samalta perheeltä. Koko
 suhteessa toisiinsa järkevä: hirvi selvästi mummoa isompi.
+
+## Kenttäkuva, valinnainen
+
+Jos haluat maalatun ympäristön piirretyn tilalle, tee kuva nimellä
+**kentta.png**, kooltaan täsmälleen 720 × 1040 pikseliä, ei läpinäkyvyyttä.
+Peli käyttää sitä automaattisesti heti kun se on kansiossa.
+
+Kuvassa on oltava nämä kohdat oikeilla paikoillaan, koska pelilogiikka
+olettaa ne: vaakasuora joki keskellä, sen keskikohta 520 pikselin
+korkeudella ja leveys noin 56 pikseliä, sekä kaksi siltaa joen yli, joiden
+keskikohdat ovat 176 ja 544 pikselin kohdalla vaakasuunnassa ja leveys noin
+96 pikseliä. Rakennukset piirretään kuvan päälle, joten älä piirrä kioskeja
+tai saunoja itse kuvaan.
+
+```
+A top-down winter arena seen from directly above, painted in a clean
+stylised game-art style. Deep snow with wind-blown drifts and faint
+footpaths, a frozen river running horizontally across the middle with two
+wooden plank bridges crossing it, dense snow-covered spruce forest along
+the left and right edges, soft late-afternoon Nordic light from the upper
+left, long soft blue shadows, no characters, no buildings, no text,
+720x1040.
+```
