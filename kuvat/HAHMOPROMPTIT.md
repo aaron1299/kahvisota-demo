@@ -1,5 +1,11 @@
 # Kahvisodan hahmokuvat, tekoälypromptit
 
+> **Vanhentunut 19.8.2026.** Hahmokuvat renderoidaan nyt Blenderilla
+> skriptista `tyokalut/hahmot3d.py`, ja reunaviiva lisataan skriptilla
+> `tyokalut/hahmoreunus.py`. Nama promptit jaavat talteen siita syysta, etta
+> ne kertovat mita kukin hahmo esittaa. Aiemmat piirretyt kuvat ovat kansiossa
+> `kuvat/vanhat/`.
+
 Kahdeksan kuvaa. Tiedostonimen on oltava täsmälleen alla oleva, ja tiedostot
 tulevat tähän samaan kansioon. Peli ottaa ne käyttöön automaattisesti heti kun
 ne ovat paikallaan, eikä koodiin tarvitse koskea. Jos kuva puuttuu, peli
